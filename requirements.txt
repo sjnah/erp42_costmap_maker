@@ -1,0 +1,6 @@
+wheel
+numpy
+shapely
+pyclipper
+yaml
+utm
