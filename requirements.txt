@@ -4,3 +4,4 @@ shapely
 pyclipper
 yaml
 utm
+opencv-python
