@@ -10,8 +10,12 @@ import utm
 
 # file name
 filepath = './path/'
-filename1 = 'FMTC_official_L.txt'
-filename2 = 'FMTC_official_R.txt'
+# filename1 = 'FMTC_official_L.txt' # delimiter " " / offset ? m / gps_origin 37.36567790, 126.72499770
+# filename2 = 'FMTC_official_R.txt'
+# filename1 = 'FMTC_centerline_GP.txt' # delimiter "," / offset 2.5 m / gps_origin 37.36578294, 126.72539592
+# filename2 = 'FMTC_centerline_GP.txt'
+filename1 = 'FMTC_simulator_1.txt' # delimiter "\t" / offset 1.25 m / gps_origin ???
+filename2 = 'FMTC_simulator_2.txt'
 
 # remap with new map origin
 remap = False
@@ -21,7 +25,7 @@ origin_new = [37.36578294, 126.72539592] # LL coordinate
 # Costmap configuration
 output_name = 'map_0_1_stopline_'
 map_resolution = 0.1 # meter
-offset_length = 1.5 # meter
+offset_length = 1.25 # meter
 boundary_size = 15 # meter
 
 class CostmapMaker():
@@ -30,8 +34,8 @@ class CostmapMaker():
 
     def loadPath(self):
         # Load path file
-        lines_lane1 = np.loadtxt(filepath+filename1, delimiter=" ", unpack=False)
-        lines_lane2 = np.loadtxt(filepath+filename2, delimiter=" ", unpack=False)
+        lines_lane1 = np.loadtxt(filepath+filename1, dtype=str, delimiter="\t", unpack=False)
+        lines_lane2 = np.loadtxt(filepath+filename2, dtype=str, delimiter="\t", unpack=False)
         waypoint_lane1 = np.array(lines_lane1)
         waypoint_lane2 = np.array(lines_lane2)
 
@@ -98,18 +102,18 @@ class CostmapMaker():
         # Calculate Costmap
         for i in range(width):
             for j in range(height):
-                # Get current cell coordinate
-                cell_x = round(self.min_x) + i*map_resolution + 0.5*map_resolution
-                cell_y = round(self.max_y) - j*map_resolution - 0.5*map_resolution
+                # # Get current cell coordinate
+                # cell_x = round(self.min_x) + i*map_resolution + 0.5*map_resolution
+                # cell_y = round(self.max_y) - j*map_resolution - 0.5*map_resolution
 
-                # Check if the cell is inside the track
-                cost = self.getCost(cell_x, cell_y, poly_outward, poly_inward)
+                # # Check if the cell is inside the track
+                # cost = self.getCost(cell_x, cell_y, poly_outward, poly_inward)
 
-                # Set cell occupancy value
-                map[j, i] = cost
+                # # Set cell occupancy value
+                # map[j, i] = cost
 
-                # # Debugging
-                # map[j, i] = 0
+                # Debugging
+                map[j, i] = 0
             
             if (i%10 == 0):
                 progress = int((i*j)/total*100)
