@@ -2,6 +2,7 @@ wheel
 numpy
 shapely
 pyclipper
-yaml
+pyyaml
+matplotlib
 utm
 opencv-python
