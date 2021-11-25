@@ -45,8 +45,8 @@ class PathConverter():
 
     def loadPath(self):
         # Load path file
-        # lines_lane1 = np.loadtxt(filepath+filename1, dtype=str, delimiter="\t", unpack=False)
-        # lines_lane2 = np.loadtxt(filepath+filename2, dtype=str, delimiter="\t", unpack=False)
+        # lines_lane1 = np.loadtxt(filepath+filename1, dtype=float, delimiter="\t", unpack=False)
+        # lines_lane2 = np.loadtxt(filepath+filename2, dtype=float, delimiter="\t", unpack=False)
         lines_lane1 = np.loadtxt(filepath+filename1, delimiter=",", unpack=False)
         lines_lane2 = np.loadtxt(filepath+filename2, delimiter=",", unpack=False)
         waypoint_lane1 = np.array(lines_lane1)
@@ -64,13 +64,19 @@ class PathConverter():
         X_new, Y_new, zone, unknown = from_latlon(origin_new[0], origin_new[1])
 
         # Transformation
-        self.waypoint_lane1 = self.waypoint_lane1 + [X_old - X_new, Y_old - Y_new, 0]
-        self.waypoint_lane2 = self.waypoint_lane2 + [X_old - X_new, Y_old - Y_new, 0]
+        diff_lane = np.array([X_old - X_new, Y_old - Y_new, 0])
+        self.waypoint_lane1 = self.waypoint_lane1 + diff_lane
+        self.waypoint_lane2 = self.waypoint_lane2 + diff_lane
 
     def savePath(self):
         # save costmap yaml
-        np.save(filepath+output_name1, self.waypoint_lane1)
-        np.save(filepath+output_name2, self.waypoint_lane2)
+        with open(filepath+output_name1, newline='', mode='w') as csvfile:
+            for x, y, psi in self.waypoint_lane1:
+                csvfile.writelines(str(x) + '\t' + str(y) + '\t' + str(psi) + '\n')
+
+        with open(filepath+output_name2, newline='', mode='w') as csvfile:
+            for x, y, psi in self.waypoint_lane2:
+                csvfile.writelines(str(x) + '\t' + str(y) + '\t' + str(psi) + '\n')
 
         print('[INFO] Finished. Check \'./costmap\' directory')
 
