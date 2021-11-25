@@ -1,4 +1,4 @@
-#!/bin/usr/env python
+#!/bin/usr/env python3
 import os
 
 import numpy as np
@@ -9,7 +9,7 @@ import shapely.geometry as shp
 import yaml
 import utm
 
-# file name
+## file name
 filepath = './path/'
 # filename1 = 'FMTC_official_L.txt' # delimiter " " / offset ? m / gps_origin 37.36567790, 126.72499770 (정지선앞)
 # filename2 = 'FMTC_official_R.txt'
@@ -17,20 +17,31 @@ filepath = './path/'
 # filename2 = 'FMTC_centerline_GP.txt'
 # filename1 = 'FMTC_simulator_1.txt' # delimiter "\t" / offset 1.25 m / gps_origin ??? (중앙길 어딘가)
 # filename2 = 'FMTC_simulator_2.txt'
-filename1 = 'yonsei_3.txt'
-filename2 = 'yonsei_3.txt'
+# filename1 = 'yonsei_3.txt'
+# filename2 = 'yonsei_3.txt'
+# filename1 = 'FMTC_sim_01.txt'
+# filename2 = 'FMTC_sim_01.txt'
+filename1 = 'FMTC_official_L_raw.txt' # delimiter " " / offset ? m / gps_origin 37.36567790, 126.72499770 (정지선앞)
+filename2 = 'FMTC_official_R_raw.txt'
 
-# remap with new map origin
-remap = False
-origin_old = [37.36567790, 126.72499770] # LL coordinate
-origin_new = [37.36578294, 126.72539592] # LL coordinate
+## remap with new map origin
+remap = True
+# origin_old = [37.36567790, 126.72499770] # LL coordinate (StopLine)
+# origin_new = [37.36578294, 126.72539592] # LL coordinate (Cargo)
+# origin_old = [37.36578294, 126.72539592] # LL coordinate (Cargo)
+# origin_new = [37.36172262, 126.72126302] # LL coordinate (SIM)
+origin_old = [37.36578294, 126.72539592] # 
+origin_new = [37.36504871398734, 126.72418471076539] # LL coordinate (SIM)
 
-# Costmap configuration
-output_name = 'map_yonsei_0_3'
+## Costmap configuration
+output_name = 'map_morai_0_1_v2_trash'
 map_resolution = 0.1 # meter
 offset_length = 1.25 # meter
-boundary_size = 10 # meter
-wallsize = 0.4 # meter
+boundary_size = 15 # meter
+wallsize = 2.0 # meter
+
+## Debug mode
+debug_mode = True
 
 class CostmapMaker():
     def __init__(self):
@@ -38,8 +49,10 @@ class CostmapMaker():
 
     def loadPath(self):
         # Load path file
-        lines_lane1 = np.loadtxt(filepath+filename1, dtype=str, delimiter="\t", unpack=False)
-        lines_lane2 = np.loadtxt(filepath+filename2, dtype=str, delimiter="\t", unpack=False)
+        # lines_lane1 = np.loadtxt(filepath+filename1, dtype=str, delimiter="\t", unpack=False)
+        # lines_lane2 = np.loadtxt(filepath+filename2, dtype=str, delimiter="\t", unpack=False)
+        lines_lane1 = np.loadtxt(filepath+filename1, delimiter=",", unpack=False)
+        lines_lane2 = np.loadtxt(filepath+filename2, delimiter=",", unpack=False)
         waypoint_lane1 = np.array(lines_lane1)
         waypoint_lane2 = np.array(lines_lane2)
 
@@ -108,18 +121,19 @@ class CostmapMaker():
         # Calculate Costmap
         for i in range(width):
             for j in range(height):
-                # Get current cell coordinate
-                cell_x = round(self.min_x) + i*map_resolution + 0.5*map_resolution
-                cell_y = round(self.max_y) - j*map_resolution - 0.5*map_resolution
+                if (debug_mode == False):
+                    # Get current cell coordinate
+                    cell_x = round(self.min_x) + i*map_resolution + 0.5*map_resolution
+                    cell_y = round(self.max_y) - j*map_resolution - 0.5*map_resolution
 
-                # Check if the cell is inside the track
-                cost = self.getCost(cell_x, cell_y)
+                    # Check if the cell is inside the track
+                    cost = self.getCost(cell_x, cell_y)
 
-                # Set cell occupancy value
-                map[j, i] = cost
-
-                # Debugging
-                # map[j, i] = 0
+                    # Set cell occupancy value
+                    map[j, i] = cost
+                else:
+                    # Debugging
+                    map[j, i] = 0
             
             if (i%10 == 0):
                 progress = int((i*j)/total*100)
@@ -136,7 +150,7 @@ class CostmapMaker():
 
         plt.scatter(round(self.min_x), round(self.min_y), s=20, color='blue')
         plt.scatter(0,0, s=20, color='red')
-        plt.scatter(cell_x, cell_y, color='green')
+        # plt.scatter(cell_x, cell_y, color='green')
         plt.plot(*self.poly_outward_1st.T, color='black')
         plt.plot(*self.poly_inward_1st.T, color='black')
         plt.plot(*self.waypoint_lane1.T, color='blue')
