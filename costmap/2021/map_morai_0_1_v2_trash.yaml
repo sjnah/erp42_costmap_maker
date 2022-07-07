@@ -2,5 +2,5 @@ free_thresh: 0.196
 image: ./map_morai_0_1_v2_trash.pgm
 negate: 0
 occupied_thresh: 0.65
-origin: '[-69, -87, 0] please remove single quote'
+origin: '[-180, -164, 0] please remove single quote'
 resolution: 0.1

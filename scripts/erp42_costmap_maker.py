@@ -9,39 +9,30 @@ import shapely.geometry as shp
 import yaml
 import utm
 
-## file name
+## file name  (check delimiter, it could be " ", "\t", ",")
 filepath = './path/'
-# filename1 = 'FMTC_official_L.txt' # delimiter " " / offset ? m / gps_origin 37.36567790, 126.72499770 (정지선앞)
-# filename2 = 'FMTC_official_R.txt'
-# filename1 = 'FMTC_centerline_GP.txt' # delimiter "," / offset 2.5 m / gps_origin 37.36578294, 126.72539592 (차고앞)
-# filename2 = 'FMTC_centerline_GP.txt'
-# filename1 = 'FMTC_simulator_1.txt' # delimiter "\t" / offset 1.25 m / gps_origin ??? (중앙길 어딘가)
-# filename2 = 'FMTC_simulator_2.txt'
-# filename1 = 'yonsei_3.txt'
-# filename2 = 'yonsei_3.txt'
-# filename1 = 'FMTC_sim_01.txt'
-# filename2 = 'FMTC_sim_01.txt'
-filename1 = 'FMTC_official_L_raw.txt' # delimiter " " / offset ? m / gps_origin 37.36567790, 126.72499770 (정지선앞)
-filename2 = 'FMTC_official_R_raw.txt'
+
+# filename1 = 'FMTC_official_L_v2.txt' # delimiter " " / offset ? m / gps_origin 37.36567790, 126.72499770 
+# filename2 = 'FMTC_official_R_v2.txt'
+filename1 = 'path_yonsei_220704_v1.txt' # delimiter " " / offset ? m / gps_origin 37.36567790, 126.72499770 
+filename2 = 'path_yonsei_220704_v1.txt'
+
+## Debug mode (if True, it show only map outline result)
+debug_mode = False
 
 ## remap with new map origin
-remap = True
-# origin_old = [37.36567790, 126.72499770] # LL coordinate (StopLine)
-# origin_new = [37.36578294, 126.72539592] # LL coordinate (Cargo)
-# origin_old = [37.36578294, 126.72539592] # LL coordinate (Cargo)
-# origin_new = [37.36172262, 126.72126302] # LL coordinate (SIM)
-origin_old = [37.36578294, 126.72539592] # 
-origin_new = [37.36504871398734, 126.72418471076539] # LL coordinate (SIM)
+remap = False
+origin_old = [37.36504871, 126.72418471] # LL coordinate (SIM)
+origin_new = [37.36578294, 126.72539592] 
 
 ## Costmap configuration
-output_name = 'map_morai_0_1_v2_trash'
+output_name = 'map_yonsei_220703_v1'
 map_resolution = 0.1 # meter
-offset_length = 1.25 # meter
-boundary_size = 15 # meter
-wallsize = 2.0 # meter
+offset_length = 2.0 # meter (offset from extracted path)
+boundary_size = 15 # meter (map boundary)
+wallsize = 0.4 # meter (outline of racing track)
 
-## Debug mode
-debug_mode = True
+
 
 class CostmapMaker():
     def __init__(self):
@@ -49,10 +40,10 @@ class CostmapMaker():
 
     def loadPath(self):
         # Load path file
-        # lines_lane1 = np.loadtxt(filepath+filename1, dtype=str, delimiter="\t", unpack=False)
-        # lines_lane2 = np.loadtxt(filepath+filename2, dtype=str, delimiter="\t", unpack=False)
-        lines_lane1 = np.loadtxt(filepath+filename1, delimiter=",", unpack=False)
-        lines_lane2 = np.loadtxt(filepath+filename2, delimiter=",", unpack=False)
+        lines_lane1 = np.loadtxt(filepath+filename1, dtype=str, delimiter="\t", unpack=False)
+        lines_lane2 = np.loadtxt(filepath+filename2, dtype=str, delimiter="\t", unpack=False)
+        # lines_lane1 = np.loadtxt(filepath+filename1, delimiter=" ", unpack=False)
+        # lines_lane2 = np.loadtxt(filepath+filename2, delimiter=" ", unpack=False)
         waypoint_lane1 = np.array(lines_lane1)
         waypoint_lane2 = np.array(lines_lane2)
 
@@ -110,6 +101,7 @@ class CostmapMaker():
         height = int(height_meter/map_resolution)
         width = int(width_meter/map_resolution)
 
+        
         print('[INFO] Map size [' + str(height_meter) + 'x' + str(width_meter) + '] (m), [' + str(height) + ' x ' + str(width) + '] (pixel)')
 
         # Make Empty costmap
@@ -166,7 +158,7 @@ class CostmapMaker():
             origin = map_origin, # The 2-D pose of the lower-left pixel in the map, as (x, y, yaw)
             occupied_thresh =  0.65, # (0~1) Pixels with occupancy probability greater than this threshold are considered completely occupied.
             free_thresh = 0.196, # (0~1)  Pixels with occupancy probability less than this threshold are considered completely free.
-            negate = 0, # (0,1) Whether the white/black free/occupied semantics should be reversed (interpretation of thresholds is unaffected)
+            negate = 1, # (0,1) Whether the white/black free/occupied semantics should be reversed (interpretation of thresholds is unaffected)
         )
         
         return map, yaml_data
