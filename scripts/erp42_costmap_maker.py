@@ -9,13 +9,19 @@ import shapely.geometry as shp
 import yaml
 import utm
 
-## file name  (check delimiter, it could be " ", "\t", ",")
+
 filepath = './path/'
 
-# filename1 = 'FMTC_official_L_v2.txt' # delimiter " " / offset ? m / gps_origin 37.36567790, 126.72499770 
-# filename2 = 'FMTC_official_R_v2.txt'
-filename1 = 'path_yonsei_220704_v1.txt' # delimiter " " / offset ? m / gps_origin 37.36567790, 126.72499770 
-filename2 = 'path_yonsei_220704_v1.txt'
+## file name  (check delimiter, it could be " ", "\t", ",")
+filename1 = 'path_songdo_221018_in.txt' 
+filename2 = 'path_songdo_221018_out.txt'
+output_name = 'songdo_v1'
+
+## Costmap configuration
+map_resolution = 0.1 # meter
+offset_length = 0.5 # meter (offset from extracted path)
+boundary_size = 15 # meter (map boundary)
+wallsize = 0.3 # meter (outline of racing track)
 
 ## Debug mode (if True, it show only map outline result)
 debug_mode = False
@@ -24,14 +30,6 @@ debug_mode = False
 remap = False
 origin_old = [37.36504871, 126.72418471] # LL coordinate (SIM)
 origin_new = [37.36578294, 126.72539592] 
-
-## Costmap configuration
-output_name = 'map_yonsei_220703_v1'
-map_resolution = 0.1 # meter
-offset_length = 2.0 # meter (offset from extracted path)
-boundary_size = 15 # meter (map boundary)
-wallsize = 0.4 # meter (outline of racing track)
-
 
 
 class CostmapMaker():
@@ -158,7 +156,7 @@ class CostmapMaker():
             origin = map_origin, # The 2-D pose of the lower-left pixel in the map, as (x, y, yaw)
             occupied_thresh =  0.65, # (0~1) Pixels with occupancy probability greater than this threshold are considered completely occupied.
             free_thresh = 0.196, # (0~1)  Pixels with occupancy probability less than this threshold are considered completely free.
-            negate = 1, # (0,1) Whether the white/black free/occupied semantics should be reversed (interpretation of thresholds is unaffected)
+            negate = 0, # (0,1) Whether the white/black free/occupied semantics should be reversed (interpretation of thresholds is unaffected)
         )
         
         return map, yaml_data
