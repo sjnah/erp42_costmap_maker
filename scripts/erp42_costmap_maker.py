@@ -1,9 +1,14 @@
 #!/bin/usr/env python3
+
 import os
+import time
+import concurrent.futures
+import multiprocessing as mp
 
 import numpy as np
 import matplotlib.pyplot as plt
 import cv2
+from math import floor
 
 import shapely.geometry as shp
 import yaml
@@ -18,7 +23,7 @@ filename2 = 'path_songdo_221018_out.txt'
 output_name = 'songdo_v1'
 
 ## Costmap configuration
-map_resolution = 0.1 # meter
+map_resolution = 1 # meter
 offset_length = 0.5 # meter (offset from extracted path)
 boundary_size = 15 # meter (map boundary)
 wallsize = 0.3 # meter (outline of racing track)
@@ -31,10 +36,9 @@ remap = False
 origin_old = [37.36504871, 126.72418471] # LL coordinate (SIM)
 origin_new = [37.36578294, 126.72539592] 
 
-
 class CostmapMaker():
     def __init__(self):
-        pass
+        self.num_processor = mp.cpu_count()
 
     def loadPath(self):
         # Load path file
@@ -92,44 +96,55 @@ class CostmapMaker():
         self.poly_inward_1st = np.array(poly_inward_1st_shp.exterior)
         self.poly_inward_2nd = np.array(poly_inward_2nd_shp.exterior)
 
+    def calcPartMap(self, division):
+        # Set boundary index
+        total_index = self.height*self.width
+        index_high = floor(total_index*(division/(self.num_processor-1)))
+        if division==0:
+            index_low = 0
+        else:
+            index_low = floor(total_index*((division-1)/(self.num_processor-1)))+1
+        
+        # Get Cost
+        count = 0
+        result = np.ones((index_high-index_low, 3))
+        for index in range(index_low, index_high):
+            i, j, cost = self.getCost(index)
+            result[count,:] = i, j, cost
+            count = count+1
+
+        return result
+
     def getCostmap(self):
         # Get costmap height and width
         height_meter = round(self.max_y) - round(self.min_y)
         width_meter = round(self.max_x) - round(self.min_x)
-        height = int(height_meter/map_resolution)
-        width = int(width_meter/map_resolution)
-
+        self.height = int(height_meter/map_resolution)
+        self.width = int(width_meter/map_resolution)
         
-        print('[INFO] Map size [' + str(height_meter) + 'x' + str(width_meter) + '] (m), [' + str(height) + ' x ' + str(width) + '] (pixel)')
+        print('[INFO] Map size [' + str(height_meter) + 'x' + str(width_meter) + '] (m), [' + str(self.height) + ' x ' + str(self.width) + '] (pixel)')
 
         # Make Empty costmap
-        map = 255*np.ones((height, width))
+        map = 255*np.ones((self.height, self.width))
 
-        print('[INFO] Calculating costmap ...')
-
-        total = height*width
         # Calculate Costmap
-        for i in range(width):
-            for j in range(height):
-                if (debug_mode == False):
-                    # Get current cell coordinate
-                    cell_x = round(self.min_x) + i*map_resolution + 0.5*map_resolution
-                    cell_y = round(self.max_y) - j*map_resolution - 0.5*map_resolution
+        if debug_mode is False:
+            division = range(self.num_processor)
+            tic = time.perf_counter()
+            print('[INFO] Calculating costmap ... (', self.num_processor, ' cores  )')
 
-                    # Check if the cell is inside the track
-                    cost = self.getCost(cell_x, cell_y)
+            with concurrent.futures.ProcessPoolExecutor(max_workers=self.num_processor) as executor:
+                for index, future in zip(division, executor.map(self.calcPartMap, division)):
+                    # Update map data
+                    for data in range(len(future)):
+                        map[int(future[data, 0]), int(future[data, 1])] = future[data, 2]
 
-                    # Set cell occupancy value
-                    map[j, i] = cost
-                else:
-                    # Debugging
-                    map[j, i] = 0
-            
-            if (i%10 == 0):
-                progress = int((i*j)/total*100)
-                print('[Calculation] {0:.2f} % finished'.format(progress))
+                    progress = index/(self.num_processor)*100
+                    print('[Calculation] {0:.2f} % finished'.format(progress))
 
         print(map)
+        toc = time.perf_counter()
+        print('[INFO] Elapsed time: {0:.1f} sec'.format(toc-tic))
 
         # Set map origin
         origin_x = round(self.min_x) - 0
@@ -161,7 +176,15 @@ class CostmapMaker():
         
         return map, yaml_data
         
-    def getCost(self, x, y):
+    def getCost(self, index):
+        # Get 2d index from 1d index input
+        i = index%self.height 
+        j = int(floor(index/self.height)) 
+
+        # Get current cell coordinate
+        x = round(self.min_x) + j*map_resolution + 0.5*map_resolution
+        y = round(self.max_y) - i*map_resolution - 0.5*map_resolution
+
         # Build Point and Polgon
         point = shp.Point(x, y)
         polygon_inside_1st = shp.polygon.Polygon(self.poly_inward_1st)
@@ -186,7 +209,7 @@ class CostmapMaker():
         else: # inside_2nd
             cost = 128
 
-        return cost
+        return i, j, cost
 
     def saveCostmap(self, map, yaml_data):
         # save costmap as pgm file

@@ -2,5 +2,5 @@ free_thresh: 0.196
 image: ./songdo_v1.pgm
 negate: 0
 occupied_thresh: 0.65
-origin: [-33, -44, 0]
-resolution: 0.1
+origin: '[-33, -44, 0] please remove single quote'
+resolution: 1
